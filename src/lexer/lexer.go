@@ -10,7 +10,34 @@ type Lexer struct {
 	position int
 }
 
-var charNotFoundError = errors.New("char is not found")
+type LeftCurlyBracketToken struct {
+	value string
+}
+
+type RightCurlyBracketToken struct {
+	value string
+}
+
+type LeftSquareBracketToken struct {
+	value string
+}
+
+type RightSquareBracketToken struct {
+	value string
+}
+
+type ColonToken struct {
+	value string
+}
+
+type CommaToken struct {
+	value string
+}
+
+var (
+	charNotFoundError     = errors.New("char is not found")
+	invalidCharacterError = errors.New("invalid character")
+)
 
 func NewLexer(json string) *Lexer {
 	l := new(Lexer)
@@ -20,7 +47,7 @@ func NewLexer(json string) *Lexer {
 	return l
 }
 
-func (l Lexer) GetNextToken() (string, error) {
+func (l Lexer) GetNextToken() (interface{}, error) {
 	ch := l.current()
 	for {
 		if !isSkipCharacter(ch) {
@@ -33,7 +60,23 @@ func (l Lexer) GetNextToken() (string, error) {
 			return "", charNotFoundError
 		}
 	}
-	return ch, nil
+
+	switch ch {
+	case "{":
+		return &LeftCurlyBracketToken{value: "{"}, nil
+	case "}":
+		return &RightCurlyBracketToken{value: "}"}, nil
+	case "[":
+		return &LeftSquareBracketToken{value: "["}, nil
+	case "]":
+		return &RightSquareBracketToken{value: "]"}, nil
+	case ":":
+		return &ColonToken{value: ":"}, nil
+	case ",":
+		return &CommaToken{value: ","}, nil
+	default:
+		return "", invalidCharacterError
+	}
 }
 
 func isSkipCharacter(ch string) bool {
