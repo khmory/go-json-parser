@@ -34,9 +34,14 @@ type CommaToken struct {
 	value string
 }
 
+type StringToken struct {
+	value string
+}
+
 var (
 	charNotFoundError     = errors.New("char is not found")
 	invalidCharacterError = errors.New("invalid character")
+	invalidStringError    = errors.New("missing double quote")
 )
 
 func NewLexer(json string) *Lexer {
@@ -45,6 +50,45 @@ func NewLexer(json string) *Lexer {
 	l.length = len(json)
 	l.position = 0
 	return l
+}
+
+func NewStringToken(l Lexer) (*StringToken, error) {
+	var str string
+	for {
+		ch, err := l.consume()
+		if err != nil {
+			return &StringToken{}, invalidStringError
+		}
+		if ch == "\"" {
+			return &StringToken{value: str}, nil
+		}
+		if ch != "\\" {
+			str += ch
+			continue
+		}
+
+		secoundCh, err := l.consume()
+		switch secoundCh {
+		case "\"":
+			str += "\""
+			break
+		case "\\":
+			str += "\""
+			break
+		case "f":
+			str += "\f"
+			break
+		case "n":
+			str += "\n"
+			break
+		case "r":
+			str += "\r"
+			break
+		case "t":
+			str += "\t"
+			break
+		}
+	}
 }
 
 func (l Lexer) GetNextToken() (interface{}, error) {
@@ -74,6 +118,12 @@ func (l Lexer) GetNextToken() (interface{}, error) {
 		return &ColonToken{value: ":"}, nil
 	case ",":
 		return &CommaToken{value: ","}, nil
+	case "\"":
+		stringToken,err := NewStringToken(l)
+		if err != nil {
+			return "", invalidStringError
+		}
+		return &stringToken, nil
 	default:
 		return "", invalidCharacterError
 	}
