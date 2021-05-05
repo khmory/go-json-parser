@@ -18,15 +18,15 @@ func NewLexer(json string) *Lexer {
 	return l
 }
 
-func (l Lexer) Current() string {
+func (l Lexer) current() string {
 	return l.json[l.position : l.position+1]
 }
 
-func (l Lexer) Consume() (string, error) {
+func (l Lexer) consume() (string, error) {
 	if l.length <= l.position {
 		return "", errors.New("finished")
 	}
 	l.position++
-	token := l.Current()
+	token := l.current()
 	return token, nil
 }
