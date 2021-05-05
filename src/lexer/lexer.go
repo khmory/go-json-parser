@@ -91,41 +91,41 @@ func NewStringToken(l Lexer) (*StringToken, error) {
 	}
 }
 
-func (l Lexer) GetNextToken() (interface{}, error) {
+func (l *Lexer) GetNextToken() (interface{}, error) {
 	ch := l.current()
 	for {
-		if !isSkipCharacter(ch) {
-			break
+		if isSkipCharacter(ch) {
+			continue
 		}
 
 		var err error
 		ch, err = l.consume()
-		if err == charNotFoundError {
+		if err != nil {
 			return "", charNotFoundError
 		}
-	}
 
-	switch ch {
-	case "{":
-		return &LeftCurlyBracketToken{value: "{"}, nil
-	case "}":
-		return &RightCurlyBracketToken{value: "}"}, nil
-	case "[":
-		return &LeftSquareBracketToken{value: "["}, nil
-	case "]":
-		return &RightSquareBracketToken{value: "]"}, nil
-	case ":":
-		return &ColonToken{value: ":"}, nil
-	case ",":
-		return &CommaToken{value: ","}, nil
-	case "\"":
-		stringToken,err := NewStringToken(l)
-		if err != nil {
-			return "", invalidStringError
+		switch ch {
+		case "{":
+			return &LeftCurlyBracketToken{value: "{"}, nil
+		case "}":
+			return &RightCurlyBracketToken{value: "}"}, nil
+		case "[":
+			return &LeftSquareBracketToken{value: "["}, nil
+		case "]":
+			return &RightSquareBracketToken{value: "]"}, nil
+		case ":":
+			return &ColonToken{value: ":"}, nil
+		case ",":
+			return &CommaToken{value: ","}, nil
+		case "\"":
+			stringToken, err := NewStringToken(*l)
+			if err != nil {
+				return "", invalidStringError
+			}
+			return &stringToken, nil
+		default:
+			return "", invalidCharacterError
 		}
-		return &stringToken, nil
-	default:
-		return "", invalidCharacterError
 	}
 }
 
@@ -136,11 +136,11 @@ func isSkipCharacter(ch string) bool {
 	return false
 }
 
-func (l Lexer) current() string {
+func (l *Lexer) current() string {
 	return l.json[l.position : l.position+1]
 }
 
-func (l Lexer) consume() (string, error) {
+func (l *Lexer) consume() (string, error) {
 	if l.length <= l.position {
 		return "", charNotFoundError
 	}
