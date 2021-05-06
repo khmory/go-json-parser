@@ -46,6 +46,10 @@ func getStringToken(l *Lexer) (string, error) {
 			str += "\""
 		case "\\":
 			str += "\""
+		case "/":
+			str += "/"
+		case "b":
+			str += "\b"
 		case "f":
 			str += "\f"
 		case "n":
@@ -88,7 +92,7 @@ func (l *Lexer) GetNextToken() (*Token, error) {
 			if err != nil {
 				return &Token{}, invalidStringError
 			}
-			return &Token{TokenType: stringToken}, nil
+			return &Token{TokenType: "String", Value: stringToken}, nil
 		default:
 			return &Token{}, invalidCharacterError
 		}
