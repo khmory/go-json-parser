@@ -58,8 +58,20 @@ func getStringToken(l *Lexer) (string, error) {
 			str += "\r"
 		case "t":
 			str += "\t"
+		case "u":
+			str += getCharacterByCodePoint(l)
 		}
 	}
+}
+
+func getCharacterByCodePoint(l *Lexer) (codePoint string) {
+	for i := 0; i < 4; i++ {
+		ch := l.consume()
+		if ch != "EOF" && ("0" <= ch && ch <= "9") || ("A" <= ch && ch <= "F") || ("a" <= ch && ch <= "f") {
+			codePoint += ch
+		}
+	}
+	return
 }
 
 func (l *Lexer) GetNextToken() (*Token, error) {
