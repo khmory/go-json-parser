@@ -2,7 +2,6 @@ package lexer
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Lexer struct {
