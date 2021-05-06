@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Lexer struct {
@@ -9,33 +10,9 @@ type Lexer struct {
 	length   int
 	position int
 }
-
-type LeftCurlyBracketToken struct {
-	value string
-}
-
-type RightCurlyBracketToken struct {
-	value string
-}
-
-type LeftSquareBracketToken struct {
-	value string
-}
-
-type RightSquareBracketToken struct {
-	value string
-}
-
-type ColonToken struct {
-	value string
-}
-
-type CommaToken struct {
-	value string
-}
-
-type StringToken struct {
-	value string
+type Token struct {
+	TokenType string
+	Value     string
 }
 
 var (
@@ -52,79 +29,69 @@ func NewLexer(json string) *Lexer {
 	return l
 }
 
-func NewStringToken(l Lexer) (*StringToken, error) {
+func getStringToken(l *Lexer) (string, error) {
 	var str string
 	for {
-		ch, err := l.consume()
-		if err != nil {
-			return &StringToken{}, invalidStringError
-		}
+		ch := l.consume()
 		if ch == "\"" {
-			return &StringToken{value: str}, nil
+			return str, nil
 		}
 		if ch != "\\" {
 			str += ch
 			continue
 		}
 
-		secoundCh, err := l.consume()
+		secoundCh := l.consume()
 		switch secoundCh {
 		case "\"":
 			str += "\""
-			break
 		case "\\":
 			str += "\""
-			break
 		case "f":
 			str += "\f"
-			break
 		case "n":
 			str += "\n"
-			break
 		case "r":
 			str += "\r"
-			break
 		case "t":
 			str += "\t"
-			break
 		}
 	}
 }
 
-func (l *Lexer) GetNextToken() (interface{}, error) {
-	ch := l.current()
+func (l *Lexer) GetNextToken() (*Token, error) {
 	for {
+		ch := l.consume()
+
+		if ch == "EOF" {
+			return &Token{TokenType: "EOF", Value: "EOF"}, nil
+		}
+
 		if isSkipCharacter(ch) {
 			continue
 		}
 
-		var err error
-		ch, err = l.consume()
-		if err != nil {
-			return "", charNotFoundError
-		}
-
 		switch ch {
 		case "{":
-			return &LeftCurlyBracketToken{value: "{"}, nil
+			return &Token{TokenType: "RightCurlyBracket", Value: "{"}, nil
 		case "}":
-			return &RightCurlyBracketToken{value: "}"}, nil
+			return &Token{TokenType: "LeftCurlyBracket", Value: "}"}, nil
 		case "[":
-			return &LeftSquareBracketToken{value: "["}, nil
+			return &Token{TokenType: "LeftSquareBracket", Value: "["}, nil
 		case "]":
-			return &RightSquareBracketToken{value: "]"}, nil
+			return &Token{TokenType: "RightSquareBracket", Value: "]"}, nil
 		case ":":
-			return &ColonToken{value: ":"}, nil
+			return &Token{TokenType: "Colon", Value: ":"}, nil
 		case ",":
-			return &CommaToken{value: ","}, nil
+			return &Token{TokenType: "Comma", Value: ","}, nil
 		case "\"":
-			stringToken, err := NewStringToken(*l)
+			stringToken, err := getStringToken(l)
 			if err != nil {
-				return "", invalidStringError
+				return &Token{}, invalidStringError
 			}
-			return &stringToken, nil
+			return &Token{TokenType: stringToken}, nil
 		default:
-			return "", invalidCharacterError
+			return &Token{}, invalidCharacterError
 		}
 	}
 }
@@ -140,11 +107,11 @@ func (l *Lexer) current() string {
 	return l.json[l.position : l.position+1]
 }
 
-func (l *Lexer) consume() (string, error) {
+func (l *Lexer) consume() string {
 	if l.length <= l.position {
-		return "", charNotFoundError
+		return "EOF"
 	}
+	ch := l.current()
 	l.position++
-	token := l.current()
-	return token, nil
+	return ch
 }
