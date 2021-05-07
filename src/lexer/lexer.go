@@ -20,6 +20,7 @@ var (
 	invalidCharacterError = errors.New("invalid character")
 	invalidStringError    = errors.New("missing double quote")
 	invalidNumberError    = errors.New("invalid number")
+	invalidLiteralError   = errors.New("invalid literal")
 )
 
 func NewLexer(json string) *Lexer {
@@ -223,10 +224,50 @@ func (l *Lexer) GetNextToken() (*Token, error) {
 				return &Token{}, err
 			}
 			return &Token{TokenType: "Number", Value: numberToken}, nil
+		case "t":
+			literalToken, err := getLiteralToken("true", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
+		case "f":
+			literalToken, err := getLiteralToken("false", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
+		case "n":
+			literalToken, err := getLiteralToken("null", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
 		default:
 			return &Token{}, invalidCharacterError
 		}
 	}
+}
+
+func getLiteralToken(expectedName string, l *Lexer) (*Token, error) {
+	name := expectedName[0:1]
+	for i := 1; i < len(expectedName); i++ {
+		ch := l.consume()
+		if ch == "EOF" {
+			return &Token{}, invalidLiteralError
+		}
+		name += ch
+	}
+
+	switch name {
+	case "true":
+		return &Token{TokenType: "True", Value: name}, nil
+	case "false":
+		return &Token{TokenType: "False", Value: name}, nil
+	case "null":
+		return &Token{TokenType: "Null", Value: name}, nil
+	}
+
+		return &Token{}, invalidLiteralError
 }
 
 func isSkipCharacter(ch string) bool {
