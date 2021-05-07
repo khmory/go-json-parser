@@ -31,6 +31,67 @@ func NewLexer(json string) *Lexer {
 	return l
 }
 
+func (l *Lexer) GetNextToken() (*Token, error) {
+	for {
+		ch := l.consume()
+
+		if ch == "EOF" {
+			return &Token{TokenType: "EOF", Value: "EOF"}, nil
+		}
+
+		if isSkipCharacter(ch) {
+			continue
+		}
+
+		switch ch {
+		case "{":
+			return &Token{TokenType: "RightCurlyBracket", Value: "{"}, nil
+		case "}":
+			return &Token{TokenType: "LeftCurlyBracket", Value: "}"}, nil
+		case "[":
+			return &Token{TokenType: "LeftSquareBracket", Value: "["}, nil
+		case "]":
+			return &Token{TokenType: "RightSquareBracket", Value: "]"}, nil
+		case ":":
+			return &Token{TokenType: "Colon", Value: ":"}, nil
+		case ",":
+			return &Token{TokenType: "Comma", Value: ","}, nil
+		case "\"":
+			stringToken, err := getStringToken(l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return &Token{TokenType: "String", Value: stringToken}, nil
+		case "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			numberToken, err := getNumberToken(ch, l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return &Token{TokenType: "Number", Value: numberToken}, nil
+		case "t":
+			literalToken, err := getLiteralToken("true", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
+		case "f":
+			literalToken, err := getLiteralToken("false", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
+		case "n":
+			literalToken, err := getLiteralToken("null", l)
+			if err != nil {
+				return &Token{}, err
+			}
+			return literalToken, nil
+		default:
+			return &Token{}, invalidCharacterError
+		}
+	}
+}
+
 func getStringToken(l *Lexer) (string, error) {
 	var str string
 	for {
@@ -187,67 +248,6 @@ EscapeForLoop:
 	return "", invalidNumberError
 }
 
-func (l *Lexer) GetNextToken() (*Token, error) {
-	for {
-		ch := l.consume()
-
-		if ch == "EOF" {
-			return &Token{TokenType: "EOF", Value: "EOF"}, nil
-		}
-
-		if isSkipCharacter(ch) {
-			continue
-		}
-
-		switch ch {
-		case "{":
-			return &Token{TokenType: "RightCurlyBracket", Value: "{"}, nil
-		case "}":
-			return &Token{TokenType: "LeftCurlyBracket", Value: "}"}, nil
-		case "[":
-			return &Token{TokenType: "LeftSquareBracket", Value: "["}, nil
-		case "]":
-			return &Token{TokenType: "RightSquareBracket", Value: "]"}, nil
-		case ":":
-			return &Token{TokenType: "Colon", Value: ":"}, nil
-		case ",":
-			return &Token{TokenType: "Comma", Value: ","}, nil
-		case "\"":
-			stringToken, err := getStringToken(l)
-			if err != nil {
-				return &Token{}, err
-			}
-			return &Token{TokenType: "String", Value: stringToken}, nil
-		case "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
-			numberToken, err := getNumberToken(ch, l)
-			if err != nil {
-				return &Token{}, err
-			}
-			return &Token{TokenType: "Number", Value: numberToken}, nil
-		case "t":
-			literalToken, err := getLiteralToken("true", l)
-			if err != nil {
-				return &Token{}, err
-			}
-			return literalToken, nil
-		case "f":
-			literalToken, err := getLiteralToken("false", l)
-			if err != nil {
-				return &Token{}, err
-			}
-			return literalToken, nil
-		case "n":
-			literalToken, err := getLiteralToken("null", l)
-			if err != nil {
-				return &Token{}, err
-			}
-			return literalToken, nil
-		default:
-			return &Token{}, invalidCharacterError
-		}
-	}
-}
-
 func getLiteralToken(expectedName string, l *Lexer) (*Token, error) {
 	name := expectedName[0:1]
 	for i := 1; i < len(expectedName); i++ {
@@ -267,7 +267,7 @@ func getLiteralToken(expectedName string, l *Lexer) (*Token, error) {
 		return &Token{TokenType: "Null", Value: name}, nil
 	}
 
-		return &Token{}, invalidLiteralError
+	return &Token{}, invalidLiteralError
 }
 
 func isSkipCharacter(ch string) bool {
