@@ -11,41 +11,39 @@ var (
 	parseError = errors.New("Unparsed tokens detected'")
 )
 
-const (
-	STATE_START = "START"
-	STATE_COMMA = "COMMA"
-	STATE_VALUE = "VALUE"
-)
-
 func Parse(json string) (interface{}, error) {
 	lex := lexer.NewLexer(json)
 	token, err := lex.GetNextToken()
 	if err != nil {
 		return nil, err
 	}
-	ret, err := parseValue(lex, token)
+	value, err := parseValue(lex, token)
 	if err != nil {
 		return nil, err
 	}
 	endCheck, _ := lex.GetNextToken()
 	if endCheck.TokenType == "EOF" {
-		return ret, nil
+		return value, nil
 	}
 
-	fmt.Printf("[debug:%v]", ret)
+	fmt.Printf("[debug:%v]", value)
 	return "", parseError
 }
 
 func parseValue(l *lexer.Lexer, token *lexer.Token) (interface{}, error) {
 	switch token.TokenType {
 	case "LeftSquareBracket":
-		mapValue, err := parseArray(l)
+		arrayValue, err := parseArray(l)
+		if err != nil {
+			return nil, err
+		}
+		return arrayValue, nil
+	case "LeftCurlyBracket":
+		mapValue, err := parseMap(l)
 		if err != nil {
 			return nil, err
 		}
 		return mapValue, nil
-	case "LeftCurlyBracket":
-		// todo
 	case "String", "Number", "True", "False", "Null":
 		return token.Value, nil
 	}
@@ -54,6 +52,13 @@ func parseValue(l *lexer.Lexer, token *lexer.Token) (interface{}, error) {
 }
 
 func parseArray(l *lexer.Lexer) ([]interface{}, error) {
+
+	const (
+		STATE_START = "START"
+		STATE_COMMA = "COMMA"
+		STATE_VALUE = "VALUE"
+	)
+
 	var array []interface{}
 	state := STATE_START
 
@@ -96,6 +101,77 @@ func parseArray(l *lexer.Lexer) ([]interface{}, error) {
 			state = STATE_VALUE
 		default:
 			fmt.Println("invalid state in array parser")
+			return nil, parseError
+		}
+	}
+	return nil, parseError
+}
+
+func parseMap(l *lexer.Lexer) (map[interface{}]interface{}, error) {
+	const (
+		STATE_START = "START"
+		STATE_KEY   = "KEY"
+		STATE_COLON = "COLON"
+		STATE_COMMA = "COMMA"
+		STATE_VALUE = "VALUE"
+	)
+
+	mapValue := map[interface{}]interface{}{}
+	var key interface{}
+	state := STATE_START
+
+	for {
+		token, err := l.GetNextToken()
+		if err != nil {
+			return nil, err
+		}
+		if token.TokenType == "EOF" {
+			break
+		}
+
+		switch state {
+		case STATE_START:
+			if token.TokenType == "RightCurlyBracket" {
+				return mapValue, nil
+			}
+			if token.TokenType == "String" {
+				key = token.Value
+				state = STATE_KEY
+				break
+			}
+			fmt.Printf("invalid token: %s \n", token.TokenType)
+			return nil, parseError
+		case STATE_KEY:
+			if token.TokenType == "Colon" {
+				state = STATE_COLON
+				break
+			}
+			fmt.Printf("invalid token: %s \n", token.TokenType)
+		case STATE_COLON:
+			value, err := parseValue(l, token)
+			if err != nil {
+				return nil, err
+			}
+			mapValue[key] = value
+			state = STATE_VALUE
+		case STATE_VALUE:
+			if token.TokenType == "RightCurlyBracket" {
+				return mapValue, nil
+			}
+			if token.TokenType == "Comma" {
+				state = STATE_COMMA
+				break
+			}
+			fmt.Printf("invalid token: %s \n", token.TokenType)
+		case STATE_COMMA:
+			if token.TokenType == "String" {
+				key = token.Value
+				state = STATE_KEY
+				break
+			}
+			fmt.Printf("invalid token: %s \n", token.TokenType)
+		default:
+			fmt.Println("invalid state in map parser")
 			return nil, parseError
 		}
 	}
