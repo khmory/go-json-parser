@@ -13,5 +13,10 @@ func main() {
 		fmt.Println("please input json file from stdin")
 	}
 	json := (string(body))
-	parser.Parse(json)
+	parsed,err := parser.Parse(json)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+	fmt.Println(parsed)
 }
