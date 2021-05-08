@@ -45,9 +45,9 @@ func (l *Lexer) GetNextToken() (*Token, error) {
 
 		switch ch {
 		case "{":
-			return &Token{TokenType: "RightCurlyBracket", Value: "{"}, nil
+			return &Token{TokenType: "LeftCurlyBracket", Value: "{"}, nil
 		case "}":
-			return &Token{TokenType: "LeftCurlyBracket", Value: "}"}, nil
+			return &Token{TokenType: "RightCurlyBracket", Value: "}"}, nil
 		case "[":
 			return &Token{TokenType: "LeftSquareBracket", Value: "["}, nil
 		case "]":
