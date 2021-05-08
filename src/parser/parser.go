@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+
 	"github.com/koheimorii/go-json-parser/src/lexer"
 )
 
@@ -12,7 +13,7 @@ var (
 
 func Parse(json string) (interface{}, error) {
 	lex := lexer.NewLexer(json)
-	ret, err := valuePaser(lex)
+	ret, err := ParseValue(lex)
 	if err != nil {
 		return "", err
 	}
@@ -25,7 +26,7 @@ func Parse(json string) (interface{}, error) {
 	return "", parseError
 }
 
-func valuePaser(l *lexer.Lexer) (interface{}, error) {
+func ParseValue(l *lexer.Lexer) (interface{}, error) {
 	token, err := l.GetNextToken()
 	if err != nil {
 		return "", err
